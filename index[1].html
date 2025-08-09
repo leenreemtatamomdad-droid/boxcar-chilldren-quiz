@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Boxcar Children - Summary & Quiz</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+</head>
+<body>
+  <header>
+    <h1>The Boxcar Children</h1>
+  </header>
+
+  <main>
+    <section id="summary">
+      <h2>Book Summary</h2>
+      <p>
+        Four orphaned siblings — Henry, Jessie, Violet, and Benny Alden — are afraid
+        they will be sent to live with a grandfather they’ve never met and think is
+        mean. They discover an abandoned boxcar in the woods and make it their home,
+        working together to survive. Eventually, they learn their grandfather is
+        kind and he brings the boxcar to his backyard so they can keep it forever.
+      </p>
+    </section>
+
+    <section id="scores">
+      <h3>Your Progress</h3>
+      <p id="lastScore">Last score: —</p>
+      <p id="highScore">High score: —</p>
+    </section>
+
+    <div class="buttons">
+      <button id="startQuiz">Start New Quiz</button>
+      <button id="resumeQuiz" style="display:none">Resume Quiz</button>
+      <button id="clearProgress" class="muted">Clear Saved Progress</button>
+    </div>
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    }
+
+    const lastScoreEl = document.getElementById('lastScore');
+    const highScoreEl = document.getElementById('highScore');
+    const resumeBtn = document.getElementById('resumeQuiz');
+    const startBtn = document.getElementById('startQuiz');
+    const clearBtn = document.getElementById('clearProgress');
+
+    function loadScores() {
+      const last = localStorage.getItem('boxcar_lastScore');
+      const high = localStorage.getItem('boxcar_highScore');
+      const state = localStorage.getItem('boxcar_quizState');
+
+      lastScoreEl.textContent = `Last score: ${ last === null ? '—' : last }`;
+      highScoreEl.textContent = `High score: ${ high === null ? '—' : high }`;
+
+      if (state) {
+        resumeBtn.style.display = 'inline-block';
+      } else {
+        resumeBtn.style.display = 'none';
+      }
+    }
+
+    startBtn.addEventListener('click', () => {
+      localStorage.removeItem('boxcar_quizState');
+      window.location.href = 'quiz.html';
+    });
+
+    resumeBtn.addEventListener('click', () => {
+      window.location.href = 'quiz.html';
+    });
+
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Clear saved progress and scores?')) {
+        localStorage.removeItem('boxcar_quizState');
+        localStorage.removeItem('boxcar_lastScore');
+        localStorage.removeItem('boxcar_highScore');
+        loadScores();
+      }
+    });
+
+    loadScores();
+  </script>
+</body>
+</html>
