@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quiz - The Boxcar Children</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Quiz</h1>
+  </header>
+
+  <main id="content">
+    <div id="quiz"></div>
+    <div id="result" style="margin-top:18px;"></div>
+    <div id="controls" style="margin-top:12px;"></div>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        question: "What do the Alden children find in the woods?",
+        choices: ["A cabin", "A boxcar", "A cave", "A treehouse"],
+        answer: 1
+      },
+      {
+        question: "Why do the children run away at first?",
+        choices: [
+          "They are looking for treasure",
+          "They think their grandfather is mean",
+          "They want to go camping",
+          "They lost their home in a storm"
+        ],
+        answer: 1
+      },
+      {
+        question: "Who is the oldest Alden child?",
+        choices: ["Benny", "Violet", "Jessie", "Henry"],
+        answer: 3
+      },
+      {
+        question: "What happens at the end of the story?",
+        choices: [
+          "They stay in the boxcar forever",
+          "They move to another town",
+          "They live with their kind grandfather",
+          "They open a bakery"
+        ],
+        answer: 2
+      }
+    ];
+
+    const STATE_KEY = 'boxcar_quizState';
+    const LAST_KEY = 'boxcar_lastScore';
+    const HIGH_KEY = 'boxcar_highScore';
+
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STATE_KEY)); } catch(e){ saved = null; }
+
+    const content = document.getElementById('content');
+    const quizContainer = document.getElementById('quiz');
+    const resultEl = document.getElementById('result');
+    const controlsEl = document.getElementById('controls');
+
+    let current = 0;
+    let score = 0;
+
+    function startNew() {
+      localStorage.removeItem(STATE_KEY);
+      current = 0;
+      score = 0;
+      showQuestion();
+    }
+
+    function resumeSaved() {
+      if (saved && typeof saved.current === 'number') {
+        current = saved.current;
+        score = saved.score || 0;
+      } else {
+        startNew();
+      }
+      showQuestion();
+    }
+
+    function renderStartOptions() {
+      if (saved) {
+        quizContainer.innerHTML = `
+          <p>You have a saved quiz in progress (question ${ (saved.current || 0) + 1 } of ${questions.length}).</p>
+          <div class="buttons-inline">
+            <button id="resumeBtn">Resume</button>
+            <button id="restartBtn">Start New</button>
+          </div>
+        `;
+        document.getElementById('resumeBtn').addEventListener('click', resumeSaved);
+        document.getElementById('restartBtn').addEventListener('click', startNew);
+      } else {
+        startNew();
+      }
+    }
+
+    function saveState() {
+      const obj = { current, score, timestamp: Date.now() };
+      localStorage.setItem(STATE_KEY, JSON.stringify(obj));
+    }
+
+    function clearState() {
+      localStorage.removeItem(STATE_KEY);
+    }
+
+    function showQuestion() {
+      if (current >= questions.length) {
+        clearState();
+        quizContainer.innerHTML = '';
+        const last = localStorage.getItem(LAST_KEY);
+        const high = localStorage.getItem(HIGH_KEY);
+
+        localStorage.setItem(LAST_KEY, `${score} / ${questions.length}`);
+
+        const lastNumeric = score;
+        const prevHigh = high ? parseInt(high.split(' ')[0],10) : null;
+        if (prevHigh === null || lastNumeric > prevHigh) {
+          localStorage.setItem(HIGH_KEY, `${score} / ${questions.length}`);
+        }
+
+        resultEl.innerHTML = `<h2>Completed!</h2><p>You scored <strong>${score}</strong> out of ${questions.length}.</p>
+        <p><a href="index.html">Back to Home</a></p>`;
+        controlsEl.innerHTML = `<button id="restart">Take Quiz Again</button> 
+                                <button id="clear">Clear Saved Scores</button>`;
+        document.getElementById('restart').addEventListener('click', () => {
+          localStorage.removeItem(LAST_KEY);
+          localStorage.removeItem(HIGH_KEY);
+          startNew();
+          resultEl.innerHTML = '';
+        });
+        document.getElementById('clear').addEventListener('click', () => {
+          if (confirm('Clear saved last score and high score?')) {
+            localStorage.removeItem(LAST_KEY);
+            localStorage.removeItem(HIGH_KEY);
+            resultEl.innerHTML = `<p>Saved scores cleared. <a href="index.html">Home</a></p>`;
+          }
+        });
+        return;
+      }
+
+      const q = questions[current];
+      resultEl.innerHTML = `<h2>Question ${current + 1} of ${questions.length}</h2>`;
+      quizContainer.innerHTML = `
+        <h3>${q.question}</h3>
+        <div class="choices">
+          ${q.choices.map((c,i)=>`<button class="choice" data-i="${i}">${c}</button>`).join('')}
+        </div>
+      `;
+
+      document.querySelectorAll('.choice').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const choice = parseInt(e.currentTarget.getAttribute('data-i'),10);
+          checkAnswer(choice);
+        });
+      });
+
+      saveState();
+
+      controlsEl.innerHTML = `<button id="quit">Quit & Save</button> <button id="resetProgress" class="muted">Reset Progress</button>`;
+      document.getElementById('quit').addEventListener('click', () => {
+        alert('Progress saved. You can resume later from the home screen.');
+        window.location.href = 'index.html';
+      });
+      document.getElementById('resetProgress').addEventListener('click', () => {
+        if (confirm('Reset current quiz progress?')) {
+          startNew();
+        }
+      });
+    }
+
+    function checkAnswer(choice) {
+      const correct = questions[current].answer;
+      if (choice === correct) {
+        score++;
+      }
+      current++;
+      saveState();
+      showQuestion();
+    }
+
+    renderStartOptions();
+
+    window.addEventListener('beforeunload', () => {
+      saveState();
+    });
+  </script>
+</body>
+</html>
